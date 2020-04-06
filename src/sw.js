@@ -1,4 +1,4 @@
-const version = '03';
+const version = '05';
 
 const files = [
     'index.html',

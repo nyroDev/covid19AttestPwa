@@ -293,14 +293,13 @@ import { PDFDocument, StandardFonts } from 'pdf-lib';
         prepareData = function() {
             const data = [];
 
-            fieldsData['date'] = new Date(fieldsData['date']);
             fieldsData['dateSortie'] = new Date(fieldsData['dateSortie']+'T'+fieldsData['heureSortie']);
 
             data.push(labelsQr['curDate']+': '+formatDate(fieldsData['now']));
 
             data.push(labelsQr['lastname']+': '+fieldsData['lastname']);
             data.push(labelsQr['firstname']+': '+fieldsData['firstname']);
-            data.push(labelsQr['date']+': '+formatDate(fieldsData['date'], true)+' '+labelsQr['place']+' '+fieldsData['place']);
+            data.push(labelsQr['date']+': '+fieldsData['date']+' '+labelsQr['place']+' '+fieldsData['place']);
             data.push(labelsQr['address']+': '+fieldsData['address']+' '+fieldsData['zipcode']+' '+fieldsData['city']);
 
             data.push(labelsQr['dateSortie']+': '+formatDate(fieldsData['dateSortie']));
@@ -370,7 +369,7 @@ import { PDFDocument, StandardFonts } from 'pdf-lib';
                 }
 
                 drawText(page, font, fieldsData['firstname']+' '+fieldsData['lastname'], pdfPosition.name);
-                drawText(page, font, formatDate(fieldsData['date'], true), pdfPosition.date);
+                drawText(page, font, fieldsData['date'], pdfPosition.date);
                 drawText(page, font, fieldsData['place'], pdfPosition.place);
                 drawText(page, font, fieldsData['address']+' '+fieldsData['zipcode']+' '+fieldsData['city'], pdfPosition.fullAddress);
 
