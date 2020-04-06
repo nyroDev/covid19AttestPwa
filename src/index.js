@@ -6,7 +6,10 @@ import { PDFDocument, StandardFonts } from 'pdf-lib';
 (function () {
 
     let step,
-        fieldsData = window.localStorage.getItem(storageName);
+        fieldsData = window.localStorage.getItem(storageName),
+        fieldsForm,
+        reasonForm,
+        qrDiv;
 
     const storageName = 'attestation',
         fields = {
@@ -161,7 +164,6 @@ import { PDFDocument, StandardFonts } from 'pdf-lib';
 
             return input;
         },
-        fieldsForm,
         showFieldsForm = function() {
             setStep('fields');
             if (!fieldsForm) {
@@ -204,7 +206,6 @@ import { PDFDocument, StandardFonts } from 'pdf-lib';
 
             fieldsForm.classList.remove('hide');
         },
-        reasonForm,
         showReasons = function() {
             fieldsData.dateSortie = new Date();
             fieldsData.heureSortie = new Date();
@@ -254,7 +255,7 @@ import { PDFDocument, StandardFonts } from 'pdf-lib';
 
                 reasonForm.appendChild(div);
 
-                vaconstr button = document.createElement('button');
+                const button = document.createElement('button');
                 button.type = 'submit';
                 button.innerText = 'Générer';
                 reasonForm.appendChild(button);
@@ -319,7 +320,6 @@ import { PDFDocument, StandardFonts } from 'pdf-lib';
 
             return a;
         },
-        qrDiv,
         detectCitySize = function(font, text, maxWidth, minSize, startSize) {
             for (let o = startSize, c = font.widthOfTextAtSize(text, startSize); c > maxWidth && o > minSize; ) {
                 c = font.widthOfTextAtSize(text, --o);
