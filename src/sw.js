@@ -1,8 +1,9 @@
-const version = '01';
+const version = '02';
 
 const files = [
     'index.html',
-    'main.js'
+    'main.js',
+    'certificate.pdf'
 ];
 
 const cachePrefix = 'attest-';

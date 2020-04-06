@@ -18,6 +18,8 @@
     "webpack-cli": "^3.3.11"
   },
   "dependencies": {
+    "pdf-lib": "^1.4.1",
+    "qrcode": "^1.4.4",
     "qrjs2": "^0.1.7"
   }
 }

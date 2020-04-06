@@ -1,14 +1,15 @@
 import css from './styles.css';
 
-import './qrjs2.js';
+const QRCode = require('qrcode');
+import { PDFDocument, StandardFonts } from 'pdf-lib';
 
 (function () {
     var step,
         storageName = 'attestation',
         fieldsData = window.localStorage.getItem(storageName),
         fields = {
-            lastname: 'text',
             firstname: 'text',
+            lastname: 'text',
             date: 'date',
             place: 'text',
             address: 'text',
@@ -16,14 +17,16 @@ import './qrjs2.js';
             city: 'text'
         },
         labels = {
-            lastname: 'Nom',
             firstname: 'Prénom',
+            lastname: 'Nom',
             date: 'Date de naissance',
             place: 'Lieu de naissance',
             address: 'Adresse',
             zipcode: 'Code postal',
             city: 'Ville',
             dateSortie: 'Date de sortie',
+            heureSortie: 'Heure de sortie',
+            created: 'Date de création:',
         },
         labelsQr = {
             curDate: 'Cree le',
@@ -37,12 +40,33 @@ import './qrjs2.js';
         },
         reasons = {
             travail: 'Déplacements entre le domicile et le lieu d’exercice de l’activité professionnelle, lorsqu’ils sont indispensables à l’exercice d’activités ne pouvant être organisées sous forme de télétravail ou déplacements professionnels ne pouvant être différés',
-            proAchat: 'Déplacements pour effectuer des achats de fournitures nécessaires à l’activité professionnelle et des achats de première nécessité3 dans des établissements dont les activités demeurent autorisées (liste sur gouvernement.fr).',
-            medical: 'Consultations et soins ne pouvant être assurés à distance et ne pouvant être différés ; consultations et soins des patients atteints d\'une affection de longue durée.',
+            courses: 'Déplacements pour effectuer des achats de fournitures nécessaires à l’activité professionnelle et des achats de première nécessité3 dans des établissements dont les activités demeurent autorisées (<a href="https://www.service-public.fr/particuliers/actualites/A13921" target="_blank">liste sur gouvernement.fr</a>).',
+            sante: 'Consultations et soins ne pouvant être assurés à distance et ne pouvant être différés ; consultations et soins des patients atteints d\'une affection de longue durée.',
             famille: 'Déplacements pour motif familial impérieux, pour l’assistance aux personnes vulnérables ou la garde d’enfants.',
             sport: 'Déplacements brefs, dans la limite d\'une heure quotidienne et dans un rayon maximal d\'un kilomètre autour du domicile, liés soit à l\'activité physique individuelle des personnes, à l\'exclusion de toute pratique sportive collective et de toute proximité avec d\'autres personnes, soit à la promenade avec les seules personnes regroupées dans un même domicile, soit aux besoins des animaux de compagnie.',
             judiciaire: 'Convocation judiciaire ou administrative.',
-            general: 'Participation à des missions d’intérêt général sur demande de l’autorité administrative.'
+            missions: 'Participation à des missions d’intérêt général sur demande de l’autorité administrative.'
+        },
+        pdfPosition = {
+            name: [123, 686, 11],
+            date: [123, 661, 11],
+            place: [92, 638, 11],
+            fullAddress: [134, 613, 11],
+            reasons: {
+                travail: [76, 527, 19],
+                courses: [76, 478, 19],
+                sante: [76, 436, 19],
+                famille: [76, 400, 19],
+                sport: [76, 345, 19],
+                judiciaire: [76, 298, 19],
+                missions: [76, 260, 19],
+            },
+            city: [111, 226, 11],
+            dateSortie: [92, 200, 11],
+            heureSortie: [200, 201, 11],
+            minSortie: [220, 201, 11],
+            createdLbl: [464, 150, 7],
+            created: [455, 144, 7],
         },
         setStep = function(newStep) {
             document.body.removeAttribute('class');
@@ -80,8 +104,8 @@ import './qrjs2.js';
                 if (value instanceof Date) {
                     if (type == 'date') {
                         value = formatDateField(value, true);
-                    } else if (type == 'datetime') {
-                        value = formatDateField(value);
+                    } else if (type == 'time') {
+                        value =(value.getHours()+'').padStart(2, '0')+':'+(value.getMinutes()+'').padStart(2, '0');
                     }
                 }
                 input.value = value;
@@ -121,6 +145,7 @@ import './qrjs2.js';
                     }
 
                     window.localStorage.setItem(storageName, JSON.stringify(fieldsData));
+
                     fieldsForm.classList.add('hide');
                     showReasons();
                 });
@@ -130,13 +155,17 @@ import './qrjs2.js';
         },
         reasonForm,
         showReasons = function() {
+            fieldsData.dateSortie = new Date();
+            fieldsData.heureSortie = new Date();
+
             setStep('reasons');
             if (!reasonForm) {
                 reasonForm = document.createElement('form');
                 reasonForm.action = '#';
                 reasonForm.method = 'post';
 
-                addField(reasonForm, 'dateSortie', 'datetime-local', labels['dateSortie'], fieldsData['dateSortie']);
+                addField(reasonForm, 'dateSortie', 'date', labels['dateSortie'], fieldsData['dateSortie']);
+                addField(reasonForm, 'heureSortie', 'time', labels['heureSortie'], fieldsData['heureSortie']);
 
                 var div = document.createElement('div');
                 div.classList.add('form_row');
@@ -199,14 +228,16 @@ import './qrjs2.js';
                     reasonForm.classList.add('hide');
                     showQr();
                 });
+            } else {
+                // Update date and heure sortie
             }
 
             reasonForm.classList.remove('hide');
         },
-        formatDate = function(date, simple) {
+        formatDate = function(date, simple, timeLetter = 'a') {
             var tmp = (date.getDate()+'').padStart(2, '0')+'/'+(1+date.getMonth()+'').padStart(2, '0')+'/'+date.getFullYear();
             if (!simple) {
-                tmp+= ' a '+(date.getHours()+'').padStart(2, '0')+'h'+(date.getMinutes()+'').padStart(2, '0');
+                tmp+= ' '+timeLetter+' '+(date.getHours()+'').padStart(2, '0')+'h'+(date.getMinutes()+'').padStart(2, '0');
             }
             return tmp;
         },
@@ -214,7 +245,7 @@ import './qrjs2.js';
             const data = [];
 
             fieldsData['date'] = new Date(fieldsData['date']);
-            fieldsData['dateSortie'] = new Date(fieldsData['dateSortie']);
+            fieldsData['dateSortie'] = new Date(fieldsData['dateSortie']+'T'+fieldsData['heureSortie']);
 
             data.push(labelsQr['curDate']+': '+formatDate(fieldsData['now']));
 
@@ -225,31 +256,146 @@ import './qrjs2.js';
 
             data.push(labelsQr['dateSortie']+': '+formatDate(fieldsData['dateSortie']));
 
-            data.push(labelsQr['reasons']+': '+fieldsData['reasons'].join(', '));
+            data.push(labelsQr['reasons']+': '+fieldsData['reasons'].join('-'));
 
-            return data.join('; ');
+            return data;
+        },
+        download = function(file) {
+            var a = document.createElement('a');
+            a.href = URL.createObjectURL(file);
+            a.download = 'attestation.pdf';
+            document.body.appendChild(a);
+            a.click();
+
+            return a;
         },
         qrDiv,
+        detectCitySize = function(font, text, maxWidth, minSize, startSize) {
+            for (var o = startSize, c = font.widthOfTextAtSize(text, startSize); c > maxWidth && o > minSize; ) {
+                c = font.widthOfTextAtSize(text, --o);
+            }
+            return c > maxWidth ? null : o;
+        },
+        drawText = function(pdfDoc, font, text, prms) {
+            return pdfDoc.drawText(text, {
+                x: prms[0],
+                y: prms[1],
+                size: prms[2],
+                font: font
+            });
+        },
         showQr = function () {
             setStep('qr');
 
             fieldsData['now'] = new Date();
 
-            qrDiv = document.createElement('div');
-            qrDiv.classList.add('qr');
+            const data = prepareData();
 
-            // Improve to have the exact same precision than regular
-            var s = QRCode.generateSVG(prepareData(), {
-                ecclevel: 'M', // L, M, Q, H
-                fillcolor: '#FFFFFF',
-                textcolor: '#373737',
-                margin: 1,
-                modulesize: 8
+            fetch(document.body.dataset.pdf).then(function(response) {
+                return response.arrayBuffer();
+            }).then(function(pdfBuff) {
+                return PDFDocument.load(pdfBuff);
+            }).then(function(pdfDoc) {
+                return Promise.all([
+                    pdfDoc,
+                    pdfDoc.embedFont(StandardFonts.Helvetica),
+                    QRCode.toDataURL(data.join('; '), {
+                        errorCorrectionLevel: 'M',
+                        type: "image/png",
+                        quality: .92,
+                        margin: 1
+                    })
+                ]);
+                
+            }).then(function(vals) {
+                const pdfDoc = vals[0];
+                const page = pdfDoc.getPages()[0];
+                const font = vals[1];
+                const qrCode = vals[2];
+
+                const minSize = 7;
+                let citySize = detectCitySize(font, fieldsData.city, 83, minSize, 11);
+                if (!citySize) {
+                    alert('Le nom de la ville risque de ne pas être affiché correctement en raison de sa longueur. Essayez d\'utiliser des abréviations ("Saint" en "St." par exemple) quand cela est possible.')
+                    citySize = minSize;
+                }
+
+                drawText(page, font, fieldsData['firstname']+' '+fieldsData['lastname'], pdfPosition.name);
+                drawText(page, font, formatDate(fieldsData['date'], true), pdfPosition.date);
+                drawText(page, font, fieldsData['place'], pdfPosition.place);
+                drawText(page, font, fieldsData['address']+' '+fieldsData['zipcode']+' '+fieldsData['city'], pdfPosition.fullAddress);
+
+                fieldsData.reasons.forEach(function(reason) {
+                    drawText(page, font, 'x', pdfPosition.reasons[reason]);
+                });
+
+                drawText(page, font, fieldsData['city'], pdfPosition.city);
+                drawText(page, font, formatDate(fieldsData['dateSortie'], true), pdfPosition.dateSortie);
+                drawText(page, font, (fieldsData['dateSortie'].getHours()+'').padStart(2, '0'), pdfPosition.heureSortie);
+                drawText(page, font, (fieldsData['dateSortie'].getMinutes()+'').padStart(2, '0'), pdfPosition.minSortie);
+                drawText(page, font, labels['created'], pdfPosition.createdLbl);
+                drawText(page, font, formatDate(fieldsData['now'], false, 'à'), pdfPosition.created);
+
+                return Promise.all([
+                    pdfDoc,
+                    qrCode,
+                    pdfDoc.embedPng(qrCode)
+                ]);
+            }).then(function(vals) {
+                const pdfDoc = vals[0];
+                const qrCode = vals[1];
+                const emebedded = vals[2];
+
+                let page = pdfDoc.getPages()[0];
+
+                page.drawImage(emebedded, {
+                    x: page.getWidth() - 170,
+                    y: 155,
+                    width: 100,
+                    height: 100
+                });
+
+                pdfDoc.addPage();
+
+                page = pdfDoc.getPages()[1];
+
+                page.drawImage(emebedded, {
+                    x: 50,
+                    y: page.getHeight() - 350,
+                    width: 300,
+                    height: 300
+                });
+
+                return Promise.all([
+                    pdfDoc,
+                    qrCode,
+                    pdfDoc.save()
+                ]);
+            }).then(function(vals) {
+                const pdfDoc = vals[0];
+                const qrCode = vals[1];
+                const pdfBytes = vals[2];
+
+                const pdfBlob = new Blob([pdfBytes], {
+                    type: 'application/pdf'
+                });
+
+                //download(pdfBlob, 'attestation.pdf');                
+
+                qrDiv = document.createElement('div');
+                qrDiv.classList.add('qr');
+
+                var img = document.createElement('img');
+                img.alt = 'QR Code';
+                img.src = qrCode;
+                qrDiv.appendChild(img);
+
+                var p = document.createElement('p');
+                p.innerHTML = data.join('<br />');
+                qrDiv.appendChild(p);
+
+                document.body.appendChild(qrDiv);
             });
-
-            qrDiv.appendChild(s);
-            
-            document.body.appendChild(qrDiv);
         };
 
     document.getElementById('back').addEventListener('click', function(e) {
@@ -257,7 +403,9 @@ import './qrjs2.js';
 
         switch(step) {
             case 'qr':
-                qrDiv.parentNode.removeChild(qrDiv);
+                if (qrDiv) {
+                    qrDiv.parentNode.removeChild(qrDiv);
+                }
                 showReasons();
                 break;
             case 'reasons':
@@ -271,9 +419,7 @@ import './qrjs2.js';
         fieldsData = JSON.parse(fieldsData);
         showReasons();
     } else {
-        fieldsData = {
-            dateSortie: new Date(),
-        };
+        fieldsData = {};
         showFieldsForm();
     }
 
