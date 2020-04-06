@@ -4,6 +4,7 @@ const QRCode = require('qrcode');
 import { PDFDocument, StandardFonts } from 'pdf-lib';
 
 (function () {
+    const storageName = 'attestation';
 
     let step,
         fieldsData = window.localStorage.getItem(storageName),
@@ -11,7 +12,7 @@ import { PDFDocument, StandardFonts } from 'pdf-lib';
         reasonForm,
         qrDiv;
 
-    const storageName = 'attestation',
+    const 
         fields = {
             firstname: {
                 type: 'text',
