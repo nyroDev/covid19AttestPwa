@@ -473,15 +473,46 @@ import { PDFDocument, StandardFonts } from 'pdf-lib';
 
     if ('serviceWorker' in navigator && document.body.dataset.sw) {
         window.addEventListener('load', () => {
-            navigator.serviceWorker.register(document.body.dataset.sw).then((registration) => {
-                if (!navigator.serviceWorker.controller) {
-                    return;
-                }
+            // Show the update button to the user and wait for a click on it
+            var _reqUpdate = function () {
+                return new Promise(function (resolve, reject) {
+                    const refreshButton = document.createElement('a');
+                    refreshButton.href = '#';
+                    refreshButton.classList.add('refreshBut', 'appBut');
+                    refreshButton.innerText = 'Mettre à jour';
 
-                navigator.serviceWorker.controller.addEventListener('message', (e) => {
-                    console.warn(e.data);
+                    refreshButton.addEventListener('click', function (e) {
+                        resolve();
+                    });
+
+                    document.body.appendChild(refreshButton);
                 });
+            };
 
+            // Call this function when an update is ready to show the button and request update
+            var _updateReady = function (worker) {
+                return _reqUpdate()
+                    .then(function () {
+                        // post message to worker to make him call skiWaiting for us
+                        worker.postMessage({
+                            action: 'skipWaiting'
+                        });
+                    })
+                    .catch(() => {
+                        console.log('Rejected new version');
+                    });
+            };
+
+            // Track state change on worker and request update when ready
+            var _trackInstalling = function (worker) {
+                worker.addEventListener('statechange', () => {
+                    if (worker.state == 'installed') {
+                        _updateReady(worker);
+                    }
+                });
+            };
+
+            var showVersion = function() {
                 var version = document.getElementById('version');
                 if (version && version.dataset.v) {
                     fetch(version.dataset.v)
@@ -489,9 +520,46 @@ import { PDFDocument, StandardFonts } from 'pdf-lib';
                             return response.json();
                         })
                         .then(function(response) {
-                            version.innerText+= response.v;
+                            var date = new Date(response.time);
+                            version.innerText = response.v+' - '+formatDate(date, false, 'à');
                         });
                 }
+            };
+
+            var refreshing;
+            // When skiwaiting is called, reload the page only once
+            navigator.serviceWorker.addEventListener('controllerchange', () => {
+                if (refreshing) {
+                    return;
+                }
+                refreshing = true;
+                window.location.reload();
+            });
+
+            navigator.serviceWorker.register(document.body.dataset.sw).then((registration) => {
+                if (!navigator.serviceWorker.controller) {
+                    return;
+                }
+
+                showVersion();
+
+                if (registration.waiting) {
+                    // There is another SW waiting, the user can switch
+                    _updateReady(registration.waiting);
+                    return;
+                }
+
+                if (registration.installing) {
+                    // There is another SW installing, listen to it to know when it's ready/waiting
+                    _trackInstalling(registration.installing);
+                    return;
+                }
+
+                // If an update if found later, track the installing too
+                registration.addEventListener('updatefound', () => {
+                    _trackInstalling(registration.installing);
+                });
+
             }, (err) => {
                 console.log('ServiceWorker registration failed: ', err);
             });
@@ -505,7 +573,7 @@ import { PDFDocument, StandardFonts } from 'pdf-lib';
 
         const installButton = document.createElement('a');
         installButton.href = '#';
-        installButton.className = 'installBut';
+        installButton.classList.add('installBut', 'appBut');
         installButton.innerText = 'Installer';
 
         installButton.addEventListener('click', function(e) {

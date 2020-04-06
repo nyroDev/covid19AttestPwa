@@ -97,7 +97,7 @@ input[type="radio"]:checked+label {
     font-weight: bold;
 }
 
-.installBut {
+.appBut {
     display: block;
     position: fixed;
     bottom: 10px;
@@ -105,9 +105,9 @@ input[type="radio"]:checked+label {
     color: #fff;
     padding: 10px 0;
     text-decoration: none;
-    width: 80px;
+    width: 120px;
     text-align: center;
-    left: calc(50vw - 40px);
+    left: calc(50vw - 60px);
     box-shadow: 0 0 20px blue;
 }
 

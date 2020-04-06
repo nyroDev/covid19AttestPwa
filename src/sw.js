@@ -1,4 +1,4 @@
-const version = '05';
+const version = '06';
 
 const files = [
     'index.html',
@@ -18,8 +18,6 @@ self.addEventListener('install', function (event) {
     event.waitUntil(
         caches.open(cacheName).then(function (cache) {
             return cache.addAll(files);
-        }).then(function () {
-            self.skipWaiting();
         })
     );
 });
@@ -38,11 +36,18 @@ self.addEventListener('activate', function (event) {
     );
 });
 
+self.addEventListener('message', function (event) {
+    if (event.data.action === 'skipWaiting') {
+        self.skipWaiting();
+    }
+});
+
 self.addEventListener('fetch', function (event) {
     const url = new URL(event.request.url);
     if (url.pathname == swLoc+'version.json') {
         event.respondWith(Promise.resolve(new Response(JSON.stringify({
-            v: 'v'+parseInt(version)
+            v: 'v'+parseInt(version),
+            time: BUILD_TIME
         }), {
             headers: {
                 'Content-Type': 'application/json'
