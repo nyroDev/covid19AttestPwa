@@ -22,7 +22,7 @@ header a {
     color: #000;
     text-decoration: none;
     padding: 3px 7px;
-    margin: 0 15px;
+    margin: 0 5px 0 15px;
 }
 
 header a:before {

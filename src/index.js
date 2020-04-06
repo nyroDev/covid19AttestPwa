@@ -4,9 +4,11 @@ const QRCode = require('qrcode');
 import { PDFDocument, StandardFonts } from 'pdf-lib';
 
 (function () {
-    var step,
-        storageName = 'attestation',
-        fieldsData = window.localStorage.getItem(storageName),
+
+    let step,
+        fieldsData = window.localStorage.getItem(storageName);
+
+    const storageName = 'attestation',
         fields = {
             firstname: {
                 type: 'text',
@@ -118,22 +120,22 @@ import { PDFDocument, StandardFonts } from 'pdf-lib';
             step = newStep;
         },
         formatDateField = function(date, simple) {
-            var tmp = date.getFullYear()+'-'+(1+date.getMonth()+'').padStart(2, '0')+'-'+(date.getDate()+'').padStart(2, '0');
+            let tmp = date.getFullYear()+'-'+(1+date.getMonth()+'').padStart(2, '0')+'-'+(date.getDate()+'').padStart(2, '0');
             if (!simple) {
                 tmp+= 'T'+(date.getHours()+'').padStart(2, '0')+':'+(date.getMinutes()+'').padStart(2, '0');
             }
             return tmp;
         },
         addField = function(form, name, config, label, value) {
-            var div = document.createElement('div');
+            const div = document.createElement('div');
             div.classList.add('form_row');
 
-            var lbl = document.createElement('label');
+            const lbl = document.createElement('label');
             lbl.setAttribute('for', name);
             lbl.innerText = label;
             div.appendChild(lbl);
 
-            var input = document.createElement('input');
+            const input = document.createElement('input');
             input.name = name;
             input.id = name;
             input.required = true;
@@ -176,7 +178,7 @@ import { PDFDocument, StandardFonts } from 'pdf-lib';
                     }
                 });
 
-                var button = document.createElement('button');
+                const button = document.createElement('button');
                 button.type = 'submit';
                 button.innerText = 'Enregistrer';
                 fieldsForm.appendChild(button);
@@ -186,10 +188,10 @@ import { PDFDocument, StandardFonts } from 'pdf-lib';
                 fieldsForm.addEventListener('submit', function(e) {
                     e.preventDefault();
 
-                    var formData = new FormData(fieldsForm);
+                    const formData = new FormData(fieldsForm);
 
                     fieldsData = {};
-                    for(var pair of formData.entries()) {
+                    for(let pair of formData.entries()) {
                         fieldsData[pair[0]] = pair[1];
                     }
 
@@ -216,19 +218,19 @@ import { PDFDocument, StandardFonts } from 'pdf-lib';
                 addField(reasonForm, 'dateSortie', fieldsDate['date'], labels['dateSortie'], fieldsData['dateSortie']);
                 addField(reasonForm, 'heureSortie', fieldsDate['time'], labels['heureSortie'], fieldsData['heureSortie']);
 
-                var div = document.createElement('div');
+                const div = document.createElement('div');
                 div.classList.add('form_row');
     
-                var lbl = document.createElement('label');
+                const lbl = document.createElement('label');
                 lbl.innerText = 'Raisons';
                 div.appendChild(lbl);
     
-                var ul = document.createElement('ul');
+                const ul = document.createElement('ul');
 
                 Object.keys(reasons).forEach(function(name) {
-                    var li = document.createElement('li');
+                    const li = document.createElement('li');
 
-                    var input = document.createElement('input');
+                    const input = document.createElement('input');
                     input.name = 'reasons';
                     input.type = 'checkbox';
                     input.value = name;
@@ -240,7 +242,7 @@ import { PDFDocument, StandardFonts } from 'pdf-lib';
 
                     li.appendChild(input);
 
-                    var lbl = document.createElement('label');
+                    const lbl = document.createElement('label');
                     lbl.setAttribute('for', name);
                     lbl.innerHTML = reasons[name];
                     li.appendChild(lbl);
@@ -252,7 +254,7 @@ import { PDFDocument, StandardFonts } from 'pdf-lib';
 
                 reasonForm.appendChild(div);
 
-                var button = document.createElement('button');
+                vaconstr button = document.createElement('button');
                 button.type = 'submit';
                 button.innerText = 'Générer';
                 reasonForm.appendChild(button);
@@ -262,10 +264,10 @@ import { PDFDocument, StandardFonts } from 'pdf-lib';
                 reasonForm.addEventListener('submit', function(e) {
                     e.preventDefault();
 
-                    var formData = new FormData(reasonForm);
+                    const formData = new FormData(reasonForm);
 
                     fieldsData['reasons'] = [];
-                    for(var pair of formData.entries()) {
+                    for(let pair of formData.entries()) {
                         if (pair[0] == 'reasons') {
                             fieldsData[pair[0]].push(pair[1]);
                         } else {
@@ -284,7 +286,7 @@ import { PDFDocument, StandardFonts } from 'pdf-lib';
             reasonForm.classList.remove('hide');
         },
         formatDate = function(date, simple, timeLetter = 'a') {
-            var tmp = (date.getDate()+'').padStart(2, '0')+'/'+(1+date.getMonth()+'').padStart(2, '0')+'/'+date.getFullYear();
+            let tmp = (date.getDate()+'').padStart(2, '0')+'/'+(1+date.getMonth()+'').padStart(2, '0')+'/'+date.getFullYear();
             if (!simple) {
                 tmp+= ' '+timeLetter+' '+(date.getHours()+'').padStart(2, '0')+'h'+(date.getMinutes()+'').padStart(2, '0');
             }
@@ -309,7 +311,7 @@ import { PDFDocument, StandardFonts } from 'pdf-lib';
             return data;
         },
         download = function(file) {
-            var a = document.createElement('a');
+            const a = document.createElement('a');
             a.href = URL.createObjectURL(file);
             a.download = 'attestation_'+(formatDate(fieldsData['dateSortie']).replace(/ /g, '-'))+'.pdf';
             document.body.appendChild(a);
@@ -319,7 +321,7 @@ import { PDFDocument, StandardFonts } from 'pdf-lib';
         },
         qrDiv,
         detectCitySize = function(font, text, maxWidth, minSize, startSize) {
-            for (var o = startSize, c = font.widthOfTextAtSize(text, startSize); c > maxWidth && o > minSize; ) {
+            for (let o = startSize, c = font.widthOfTextAtSize(text, startSize); c > maxWidth && o > minSize; ) {
                 c = font.widthOfTextAtSize(text, --o);
             }
             return c > maxWidth ? null : o;
@@ -433,12 +435,12 @@ import { PDFDocument, StandardFonts } from 'pdf-lib';
                 qrDiv = document.createElement('div');
                 qrDiv.classList.add('qr');
 
-                var img = document.createElement('img');
+                const img = document.createElement('img');
                 img.alt = 'QR Code';
                 img.src = qrCode;
                 qrDiv.appendChild(img);
 
-                var p = document.createElement('p');
+                const p = document.createElement('p');
                 p.innerHTML = data.join('<br />');
                 qrDiv.appendChild(p);
 
@@ -474,7 +476,7 @@ import { PDFDocument, StandardFonts } from 'pdf-lib';
     if ('serviceWorker' in navigator && document.body.dataset.sw) {
         window.addEventListener('load', () => {
             // Show the update button to the user and wait for a click on it
-            var _reqUpdate = function () {
+            const _reqUpdate = function () {
                 return new Promise(function (resolve, reject) {
                     const refreshButton = document.createElement('a');
                     refreshButton.href = '#';
@@ -490,7 +492,7 @@ import { PDFDocument, StandardFonts } from 'pdf-lib';
             };
 
             // Call this function when an update is ready to show the button and request update
-            var _updateReady = function (worker) {
+            const _updateReady = function (worker) {
                 return _reqUpdate()
                     .then(function () {
                         // post message to worker to make him call skiWaiting for us
@@ -504,7 +506,7 @@ import { PDFDocument, StandardFonts } from 'pdf-lib';
             };
 
             // Track state change on worker and request update when ready
-            var _trackInstalling = function (worker) {
+            const _trackInstalling = function (worker) {
                 worker.addEventListener('statechange', () => {
                     if (worker.state == 'installed') {
                         _updateReady(worker);
@@ -512,21 +514,21 @@ import { PDFDocument, StandardFonts } from 'pdf-lib';
                 });
             };
 
-            var showVersion = function() {
-                var version = document.getElementById('version');
+            const showVersion = function() {
+                const version = document.getElementById('version');
                 if (version && version.dataset.v) {
                     fetch(version.dataset.v)
                         .then(function(response) {
                             return response.json();
                         })
                         .then(function(response) {
-                            var date = new Date(response.time);
+                            const date = new Date(response.time);
                             version.innerText = response.v+' - '+formatDate(date, false, 'à');
                         });
                 }
             };
 
-            var refreshing;
+            let refreshing;
             // When skiwaiting is called, reload the page only once
             navigator.serviceWorker.addEventListener('controllerchange', () => {
                 if (refreshing) {
@@ -569,7 +571,7 @@ import { PDFDocument, StandardFonts } from 'pdf-lib';
     // Prompt install
     window.addEventListener('beforeinstallprompt', function(e) {
         e.preventDefault();
-        var deferredPrompt = e;
+        let deferredPrompt = e;
 
         const installButton = document.createElement('a');
         installButton.href = '#';
