@@ -139,7 +139,7 @@ import { PDFDocument, StandardFonts } from 'pdf-lib';
             input.required = true;
 
             Object.keys(config).forEach(function(cfg) {
-                input[cfg] = config[cfg];
+                input.setAttribute(cfg, config[cfg]);
             });
 
             if (value) {
