@@ -1,4 +1,4 @@
-const version = '02';
+const version = '01';
 
 const files = [
     'index.html',
@@ -18,7 +18,7 @@ self.addEventListener('install', function (event) {
     event.waitUntil(
         caches.open(cacheName).then(function (cache) {
             return cache.addAll(files);
-        }).then(function() {
+        }).then(function () {
             self.skipWaiting();
         })
     );
@@ -39,18 +39,13 @@ self.addEventListener('activate', function (event) {
 });
 
 self.addEventListener('fetch', function (event) {
-    const url = new URL(event.request.url);
-    if (url.pathname == swLoc) {
-        event.respondWith(caches.match('index.html'));
-        return;
-    }
     event.respondWith(
-        caches.match(event.request)
-        .then(function(response) {
-            if (response) {
-                return response;
-            }
-            return fetch(event.request);
+        caches.open(cacheName).then(function (cache) {
+            const url = new URL(event.request.url);
+            return cache.match(url.pathname == swLoc ? 'index.html' : event.request)
+                .then(function (response) {
+                    return response || fetch(event.request);
+                });
         })
     );
 });

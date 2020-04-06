@@ -380,7 +380,7 @@ import { PDFDocument, StandardFonts } from 'pdf-lib';
                     type: 'application/pdf'
                 });
 
-                //download(pdfBlob, 'attestation.pdf');                
+                download(pdfBlob, 'attestation.pdf');                
 
                 qrDiv = document.createElement('div');
                 qrDiv.classList.add('qr');
