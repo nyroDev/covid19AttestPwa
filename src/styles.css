@@ -1,0 +1,113 @@
+body {
+    background: #ddd;
+    font-size: 16px;
+    margin: 0 0 50px;
+    padding: 10px;
+}
+
+header {
+    margin: -10px -10px 10px;
+    padding: 10px;
+    background: #333;
+}
+
+header strong {
+    color: #fff;
+}
+
+header a {
+    position: relative;
+    display: inline-block;
+    background: #fff;
+    color: #000;
+    text-decoration: none;
+    padding: 3px 7px;
+    margin: 0 15px;
+}
+
+header a:before {
+    right: 100%;
+    top: 50%;
+    border: solid transparent;
+    content: '';
+    height: 0;
+    width: 0;
+    position: absolute;
+    pointer-events: none;
+    border-color: rgba(188, 213, 183, 0);
+    border-right-color: #fff;
+    border-width: 12px;
+    margin-top: -12px;
+}
+
+.fields header a {
+    display: none;
+}
+
+.hide {
+    display: none;
+}
+
+label {
+    width: 100%;
+}
+
+input[type="text"],
+input[type="date"],
+input[type="number"],
+input[type="datetime-local"] {
+    display: block;
+    border: 1px solid #333;
+    padding: 5px 10px;
+    width: 100%;
+    font-size: 16px;
+    box-sizing: border-box;
+}
+
+input[type="number"] {
+    width: 5em;
+}
+
+input[type="date"] {
+    width: 10em;
+}
+
+input[type="datetime-local"] {
+    width: 14em;
+}
+
+button {
+    font-size: 16px;
+    color: #fff;
+    background: #333;
+    border: 1px solid #333;
+    padding: 5px 10px;
+}
+
+.form_row {
+    margin-bottom: 5px;
+}
+
+ul {
+    margin: 0;
+    padding: 0;
+    list-style-type: none;
+}
+
+input[type="radio"]:checked+label {
+    font-weight: bold;
+}
+
+.installBut {
+    display: block;
+    position: fixed;
+    bottom: 10px;
+    background: #333;
+    color: #fff;
+    padding: 10px 0;
+    text-decoration: none;
+    width: 80px;
+    text-align: center;
+    left: calc(50vw - 40px);
+    box-shadow: 0 0 20px blue;
+}
