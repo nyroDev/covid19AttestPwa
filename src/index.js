@@ -193,7 +193,7 @@ import { PDFDocument, StandardFonts } from 'pdf-lib';
 
                     var lbl = document.createElement('label');
                     lbl.setAttribute('for', name);
-                    lbl.innerText = reasons[name];
+                    lbl.innerHTML = reasons[name];
                     li.appendChild(lbl);
 
                     ul.appendChild(li);
