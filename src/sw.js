@@ -1,4 +1,4 @@
-const version = '01';
+const version = '02';
 
 const files = [
     'index.html',
@@ -39,9 +39,19 @@ self.addEventListener('activate', function (event) {
 });
 
 self.addEventListener('fetch', function (event) {
+    const url = new URL(event.request.url);
+    if (url.pathname == swLoc+'version.json') {
+        event.respondWith(Promise.resolve(new Response(JSON.stringify({
+            v: 'v'+parseInt(version)
+        }), {
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })));
+        return;    
+    }
     event.respondWith(
         caches.open(cacheName).then(function (cache) {
-            const url = new URL(event.request.url);
             return cache.match(url.pathname == swLoc ? 'index.html' : event.request)
                 .then(function (response) {
                     return response || fetch(event.request);

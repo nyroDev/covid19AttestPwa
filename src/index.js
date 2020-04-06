@@ -8,13 +8,57 @@ import { PDFDocument, StandardFonts } from 'pdf-lib';
         storageName = 'attestation',
         fieldsData = window.localStorage.getItem(storageName),
         fields = {
-            firstname: 'text',
-            lastname: 'text',
-            date: 'date',
-            place: 'text',
-            address: 'text',
-            zipcode: 'number',
-            city: 'text'
+            firstname: {
+                type: 'text',
+                autocomplete: 'given-name',
+                placeholder: 'Jean',
+            },
+            lastname: {
+                type: 'text',
+                autocomplete: 'family-name',
+                placeholder: 'Dupont',
+            },
+            date: {
+                type: 'text',
+                inputmode: 'numeric',
+                autocomplete: 'bday',
+                placeholder: '01/01/1970',
+                maxlength: 10,
+                pattern: '[0-9]{1,2}/[0-9]{1,2}/[0-9]{4}'
+            },
+            place: {
+                type: 'text',
+                placeholder: 'Lyon',
+            },
+            address: {
+                type: 'text',
+                autocomplete: 'address-line1',
+                placeholder: '999 avenue de france',
+            },
+            zipcode: {
+                type: 'number',
+                min: '00000',
+                max: '999999',
+                minlength: 4,
+                maxlength: 5,
+                autocomplete: 'zipcode',
+                placeholder: '75001',
+            },
+            city: {
+                type: 'text',
+                autocomplete: 'address-level1',
+                placeholder: 'Paris',
+            }
+        },
+        fieldsDate = {
+            date: {
+                type: 'date',
+                placeholder: 'JJ/MM/AAAA',
+                pattern: '[0-9]{1,2}/[0-9]{1,2}/[0-9]{4}'
+            },
+            time: {
+                type: 'time',
+            }
         },
         labels = {
             firstname: 'Prénom',
@@ -80,7 +124,7 @@ import { PDFDocument, StandardFonts } from 'pdf-lib';
             }
             return tmp;
         },
-        addField = function(form, name, type, label, value) {
+        addField = function(form, name, config, label, value) {
             var div = document.createElement('div');
             div.classList.add('form_row');
 
@@ -91,20 +135,18 @@ import { PDFDocument, StandardFonts } from 'pdf-lib';
 
             var input = document.createElement('input');
             input.name = name;
-            input.type = type;
             input.id = name;
             input.required = true;
-            input.innerText = input;
 
-            if (type == 'number') {
-                input.maxlength = 5;
-            }
+            Object.keys(config).forEach(function(cfg) {
+                input[cfg] = config[cfg];
+            });
 
             if (value) {
                 if (value instanceof Date) {
-                    if (type == 'date') {
+                    if (config.type == 'date') {
                         value = formatDateField(value, true);
-                    } else if (type == 'time') {
+                    } else if (config.type == 'time') {
                         value =(value.getHours()+'').padStart(2, '0')+':'+(value.getMinutes()+'').padStart(2, '0');
                     }
                 }
@@ -114,6 +156,8 @@ import { PDFDocument, StandardFonts } from 'pdf-lib';
             div.appendChild(input);
 
             form.appendChild(div);
+
+            return input;
         },
         fieldsForm,
         showFieldsForm = function() {
@@ -124,7 +168,12 @@ import { PDFDocument, StandardFonts } from 'pdf-lib';
                 fieldsForm.method = 'post';
 
                 Object.keys(fields).forEach(function(name) {
-                    addField(fieldsForm, name, fields[name], labels[name], fieldsData[name]);
+                    const input = addField(fieldsForm, name, fields[name], labels[name], fieldsData[name]);
+                    if (name === 'date') {
+                        input.addEventListener('keyup', function() {
+                            this.value = this.value.replace(/^(\d{2})$/g, "$1/").replace(/^(\d{2})\/(\d{2})$/g, "$1/$2/");
+                        });
+                    }
                 });
 
                 var button = document.createElement('button');
@@ -164,8 +213,8 @@ import { PDFDocument, StandardFonts } from 'pdf-lib';
                 reasonForm.action = '#';
                 reasonForm.method = 'post';
 
-                addField(reasonForm, 'dateSortie', 'date', labels['dateSortie'], fieldsData['dateSortie']);
-                addField(reasonForm, 'heureSortie', 'time', labels['heureSortie'], fieldsData['heureSortie']);
+                addField(reasonForm, 'dateSortie', fieldsDate['date'], labels['dateSortie'], fieldsData['dateSortie']);
+                addField(reasonForm, 'heureSortie', fieldsDate['time'], labels['heureSortie'], fieldsData['heureSortie']);
 
                 var div = document.createElement('div');
                 div.classList.add('form_row');
@@ -263,7 +312,7 @@ import { PDFDocument, StandardFonts } from 'pdf-lib';
         download = function(file) {
             var a = document.createElement('a');
             a.href = URL.createObjectURL(file);
-            a.download = 'attestation.pdf';
+            a.download = 'attestation_'+(formatDate(fieldsData['dateSortie']).replace(/ /g, '-'))+'.pdf';
             document.body.appendChild(a);
             a.click();
 
@@ -433,6 +482,17 @@ import { PDFDocument, StandardFonts } from 'pdf-lib';
                 navigator.serviceWorker.controller.addEventListener('message', (e) => {
                     console.warn(e.data);
                 });
+
+                var version = document.getElementById('version');
+                if (version && version.dataset.v) {
+                    fetch(version.dataset.v)
+                        .then(function(response) {
+                            return response.json();
+                        })
+                        .then(function(response) {
+                            version.innerText+= response.v;
+                        });
+                }
             }, (err) => {
                 console.log('ServiceWorker registration failed: ', err);
             });
