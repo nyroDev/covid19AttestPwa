@@ -322,7 +322,8 @@ import { PDFDocument, StandardFonts } from 'pdf-lib';
             return a;
         },
         detectCitySize = function(font, text, maxWidth, minSize, startSize) {
-            for (let o = startSize, c = font.widthOfTextAtSize(text, startSize); c > maxWidth && o > minSize; ) {
+            let o, c;
+            for (o = startSize, c = font.widthOfTextAtSize(text, startSize); c > maxWidth && o > minSize; ) {
                 c = font.widthOfTextAtSize(text, --o);
             }
             return c > maxWidth ? null : o;
