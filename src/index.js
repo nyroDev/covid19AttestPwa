@@ -5,6 +5,8 @@ import { PDFDocument, StandardFonts } from 'pdf-lib';
 
 (function () {
     const storageName = 'attestation';
+    const cacheAttestName = 'attestPdf';
+    const cachePdfName = 'attestation.pdf';
 
     let step,
         fieldsData = window.localStorage.getItem(storageName),
@@ -12,7 +14,7 @@ import { PDFDocument, StandardFonts } from 'pdf-lib';
         reasonForm,
         qrDiv;
 
-    const 
+    const
         fields = {
             firstname: {
                 type: 'text',
@@ -118,19 +120,19 @@ import { PDFDocument, StandardFonts } from 'pdf-lib';
             createdLbl: [464, 150, 7],
             created: [455, 144, 7],
         },
-        setStep = function(newStep) {
+        setStep = function (newStep) {
             document.body.removeAttribute('class');
             document.body.classList.add(newStep);
             step = newStep;
         },
-        formatDateField = function(date, simple) {
-            let tmp = date.getFullYear()+'-'+(1+date.getMonth()+'').padStart(2, '0')+'-'+(date.getDate()+'').padStart(2, '0');
+        formatDateField = function (date, simple) {
+            let tmp = date.getFullYear() + '-' + (1 + date.getMonth() + '').padStart(2, '0') + '-' + (date.getDate() + '').padStart(2, '0');
             if (!simple) {
-                tmp+= 'T'+(date.getHours()+'').padStart(2, '0')+':'+(date.getMinutes()+'').padStart(2, '0');
+                tmp += 'T' + (date.getHours() + '').padStart(2, '0') + ':' + (date.getMinutes() + '').padStart(2, '0');
             }
             return tmp;
         },
-        addField = function(form, name, config, label, value) {
+        addField = function (form, name, config, label, value) {
             const div = document.createElement('div');
             div.classList.add('form_row');
 
@@ -144,7 +146,7 @@ import { PDFDocument, StandardFonts } from 'pdf-lib';
             input.id = name;
             input.required = true;
 
-            Object.keys(config).forEach(function(cfg) {
+            Object.keys(config).forEach(function (cfg) {
                 input.setAttribute(cfg, config[cfg]);
             });
 
@@ -153,7 +155,7 @@ import { PDFDocument, StandardFonts } from 'pdf-lib';
                     if (config.type == 'date') {
                         value = formatDateField(value, true);
                     } else if (config.type == 'time') {
-                        value =(value.getHours()+'').padStart(2, '0')+':'+(value.getMinutes()+'').padStart(2, '0');
+                        value = (value.getHours() + '').padStart(2, '0') + ':' + (value.getMinutes() + '').padStart(2, '0');
                     }
                 }
                 input.value = value;
@@ -165,17 +167,17 @@ import { PDFDocument, StandardFonts } from 'pdf-lib';
 
             return input;
         },
-        showFieldsForm = function() {
+        showFieldsForm = function () {
             setStep('fields');
             if (!fieldsForm) {
                 fieldsForm = document.createElement('form');
                 fieldsForm.action = '#';
                 fieldsForm.method = 'post';
 
-                Object.keys(fields).forEach(function(name) {
+                Object.keys(fields).forEach(function (name) {
                     const input = addField(fieldsForm, name, fields[name], labels[name], fieldsData[name]);
                     if (name === 'date') {
-                        input.addEventListener('keyup', function() {
+                        input.addEventListener('keyup', function () {
                             this.value = this.value.replace(/^(\d{2})$/g, "$1/").replace(/^(\d{2})\/(\d{2})$/g, "$1/$2/");
                         });
                     }
@@ -188,13 +190,13 @@ import { PDFDocument, StandardFonts } from 'pdf-lib';
 
                 document.body.appendChild(fieldsForm);
 
-                fieldsForm.addEventListener('submit', function(e) {
+                fieldsForm.addEventListener('submit', function (e) {
                     e.preventDefault();
 
                     const formData = new FormData(fieldsForm);
 
                     fieldsData = {};
-                    for(let pair of formData.entries()) {
+                    for (let pair of formData.entries()) {
                         fieldsData[pair[0]] = pair[1];
                     }
 
@@ -207,7 +209,7 @@ import { PDFDocument, StandardFonts } from 'pdf-lib';
 
             fieldsForm.classList.remove('hide');
         },
-        showReasons = function() {
+        showReasons = function () {
             fieldsData.dateSortie = new Date();
             fieldsData.heureSortie = new Date();
 
@@ -222,14 +224,14 @@ import { PDFDocument, StandardFonts } from 'pdf-lib';
 
                 const div = document.createElement('div');
                 div.classList.add('form_row');
-    
+
                 const lbl = document.createElement('label');
                 lbl.innerText = 'Raisons';
                 div.appendChild(lbl);
-    
+
                 const ul = document.createElement('ul');
 
-                Object.keys(reasons).forEach(function(name) {
+                Object.keys(reasons).forEach(function (name) {
                     const li = document.createElement('li');
 
                     const input = document.createElement('input');
@@ -263,13 +265,13 @@ import { PDFDocument, StandardFonts } from 'pdf-lib';
 
                 document.body.appendChild(reasonForm);
 
-                reasonForm.addEventListener('submit', function(e) {
+                reasonForm.addEventListener('submit', function (e) {
                     e.preventDefault();
 
                     const formData = new FormData(reasonForm);
 
                     fieldsData['reasons'] = [];
-                    for(let pair of formData.entries()) {
+                    for (let pair of formData.entries()) {
                         if (pair[0] == 'reasons') {
                             fieldsData[pair[0]].push(pair[1]);
                         } else {
@@ -287,48 +289,56 @@ import { PDFDocument, StandardFonts } from 'pdf-lib';
 
             reasonForm.classList.remove('hide');
         },
-        formatDate = function(date, simple, timeLetter = 'a') {
-            let tmp = (date.getDate()+'').padStart(2, '0')+'/'+(1+date.getMonth()+'').padStart(2, '0')+'/'+date.getFullYear();
+        formatDate = function (date, simple, timeLetter = 'a') {
+            let tmp = (date.getDate() + '').padStart(2, '0') + '/' + (1 + date.getMonth() + '').padStart(2, '0') + '/' + date.getFullYear();
             if (!simple) {
-                tmp+= ' '+timeLetter+' '+(date.getHours()+'').padStart(2, '0')+'h'+(date.getMinutes()+'').padStart(2, '0');
+                tmp += ' ' + timeLetter + ' ' + (date.getHours() + '').padStart(2, '0') + 'h' + (date.getMinutes() + '').padStart(2, '0');
             }
             return tmp;
         },
-        prepareData = function() {
+        prepareData = function () {
             const data = [];
 
-            fieldsData['dateSortie'] = new Date(fieldsData['dateSortie']+'T'+fieldsData['heureSortie']);
+            fieldsData['dateSortie'] = new Date(fieldsData['dateSortie'] + 'T' + fieldsData['heureSortie']);
 
-            data.push(labelsQr['curDate']+': '+formatDate(fieldsData['now']));
+            data.push(labelsQr['curDate'] + ': ' + formatDate(fieldsData['now']));
 
-            data.push(labelsQr['lastname']+': '+fieldsData['lastname']);
-            data.push(labelsQr['firstname']+': '+fieldsData['firstname']);
-            data.push(labelsQr['date']+': '+fieldsData['date']+' '+labelsQr['place']+' '+fieldsData['place']);
-            data.push(labelsQr['address']+': '+fieldsData['address']+' '+fieldsData['zipcode']+' '+fieldsData['city']);
+            data.push(labelsQr['lastname'] + ': ' + fieldsData['lastname']);
+            data.push(labelsQr['firstname'] + ': ' + fieldsData['firstname']);
+            data.push(labelsQr['date'] + ': ' + fieldsData['date'] + ' ' + labelsQr['place'] + ' ' + fieldsData['place']);
+            data.push(labelsQr['address'] + ': ' + fieldsData['address'] + ' ' + fieldsData['zipcode'] + ' ' + fieldsData['city']);
 
-            data.push(labelsQr['dateSortie']+': '+formatDate(fieldsData['dateSortie']));
+            data.push(labelsQr['dateSortie'] + ': ' + formatDate(fieldsData['dateSortie']));
 
-            data.push(labelsQr['reasons']+': '+fieldsData['reasons'].join('-'));
+            data.push(labelsQr['reasons'] + ': ' + fieldsData['reasons'].join('-'));
 
             return data;
         },
-        download = function(file) {
+        downloadBlob = function (file) {
             const a = document.createElement('a');
             a.href = URL.createObjectURL(file);
-            a.download = 'attestation_'+(formatDate(fieldsData['dateSortie']).replace(/ /g, '-'))+'.pdf';
+            a.download = 'attestation_' + (formatDate(fieldsData['dateSortie']).replace(/ /g, '-')) + '.pdf';
             document.body.appendChild(a);
             a.click();
 
             return a;
         },
-        detectCitySize = function(font, text, maxWidth, minSize, startSize) {
+        downloadSw = function (file) {
+            const a = document.createElement('a');
+            a.href = file;
+            document.body.appendChild(a);
+            a.click();
+
+            return a;
+        },
+        detectCitySize = function (font, text, maxWidth, minSize, startSize) {
             let o, c;
-            for (o = startSize, c = font.widthOfTextAtSize(text, startSize); c > maxWidth && o > minSize; ) {
+            for (o = startSize, c = font.widthOfTextAtSize(text, startSize); c > maxWidth && o > minSize;) {
                 c = font.widthOfTextAtSize(text, --o);
             }
             return c > maxWidth ? null : o;
         },
-        drawText = function(pdfDoc, font, text, prms) {
+        drawText = function (pdfDoc, font, text, prms) {
             return pdfDoc.drawText(text, {
                 x: prms[0],
                 y: prms[1],
@@ -343,11 +353,11 @@ import { PDFDocument, StandardFonts } from 'pdf-lib';
 
             const data = prepareData();
 
-            fetch(document.body.dataset.pdf).then(function(response) {
+            fetch(document.body.dataset.pdf).then(function (response) {
                 return response.arrayBuffer();
-            }).then(function(pdfBuff) {
+            }).then(function (pdfBuff) {
                 return PDFDocument.load(pdfBuff);
-            }).then(function(pdfDoc) {
+            }).then(function (pdfDoc) {
                 return Promise.all([
                     pdfDoc,
                     pdfDoc.embedFont(StandardFonts.Helvetica),
@@ -358,8 +368,8 @@ import { PDFDocument, StandardFonts } from 'pdf-lib';
                         margin: 1
                     })
                 ]);
-                
-            }).then(function(vals) {
+
+            }).then(function (vals) {
                 const pdfDoc = vals[0];
                 const page = pdfDoc.getPages()[0];
                 const font = vals[1];
@@ -372,19 +382,19 @@ import { PDFDocument, StandardFonts } from 'pdf-lib';
                     citySize = minSize;
                 }
 
-                drawText(page, font, fieldsData['firstname']+' '+fieldsData['lastname'], pdfPosition.name);
+                drawText(page, font, fieldsData['firstname'] + ' ' + fieldsData['lastname'], pdfPosition.name);
                 drawText(page, font, fieldsData['date'], pdfPosition.date);
                 drawText(page, font, fieldsData['place'], pdfPosition.place);
-                drawText(page, font, fieldsData['address']+' '+fieldsData['zipcode']+' '+fieldsData['city'], pdfPosition.fullAddress);
+                drawText(page, font, fieldsData['address'] + ' ' + fieldsData['zipcode'] + ' ' + fieldsData['city'], pdfPosition.fullAddress);
 
-                fieldsData.reasons.forEach(function(reason) {
+                fieldsData.reasons.forEach(function (reason) {
                     drawText(page, font, 'x', pdfPosition.reasons[reason]);
                 });
 
                 drawText(page, font, fieldsData['city'], pdfPosition.city);
                 drawText(page, font, formatDate(fieldsData['dateSortie'], true), pdfPosition.dateSortie);
-                drawText(page, font, (fieldsData['dateSortie'].getHours()+'').padStart(2, '0'), pdfPosition.heureSortie);
-                drawText(page, font, (fieldsData['dateSortie'].getMinutes()+'').padStart(2, '0'), pdfPosition.minSortie);
+                drawText(page, font, (fieldsData['dateSortie'].getHours() + '').padStart(2, '0'), pdfPosition.heureSortie);
+                drawText(page, font, (fieldsData['dateSortie'].getMinutes() + '').padStart(2, '0'), pdfPosition.minSortie);
                 drawText(page, font, labels['created'], pdfPosition.createdLbl);
                 drawText(page, font, formatDate(fieldsData['now'], false, 'à'), pdfPosition.created);
 
@@ -393,7 +403,7 @@ import { PDFDocument, StandardFonts } from 'pdf-lib';
                     qrCode,
                     pdfDoc.embedPng(qrCode)
                 ]);
-            }).then(function(vals) {
+            }).then(function (vals) {
                 const pdfDoc = vals[0];
                 const qrCode = vals[1];
                 const emebedded = vals[2];
@@ -419,20 +429,45 @@ import { PDFDocument, StandardFonts } from 'pdf-lib';
                 });
 
                 return Promise.all([
-                    pdfDoc,
                     qrCode,
-                    pdfDoc.save()
+                    pdfDoc.save(),
+                    caches.open(cacheAttestName)
                 ]);
-            }).then(function(vals) {
-                const pdfDoc = vals[0];
-                const qrCode = vals[1];
-                const pdfBytes = vals[2];
+            }).then(function (vals) {
+                const qrCode = vals[0];
+                const pdfBytes = vals[1];
+                const cache = vals[2];
 
                 const pdfBlob = new Blob([pdfBytes], {
                     type: 'application/pdf'
                 });
 
-                download(pdfBlob, 'attestation.pdf');                
+                return Promise.all([
+                    qrCode,
+                    pdfBlob,
+                    cache.put(cachePdfName, new Response(pdfBlob, {
+                        status: 200,
+                        statusText: 'OK',
+                        headers: {
+                            'Content-Type': 'application/pdf',
+                            'Content-Disposition': 'attachment; filename="' + 'attestation_' + (formatDate(fieldsData['dateSortie']).replace(/ /g, '-')) + '.pdf"',
+                            'Content-Transfer-Encoding': 'binary',
+                            'Expires': 0,
+                            'Cache-Control': 'must-revalidate, post-check=0, pre-check=0',
+                            'Pragma': 'public',
+                            'Content-length': pdfBlob.size
+                        }
+                    }))
+                ]);
+            }).then(function (vals) {
+                const qrCode = vals[0];
+                const pdfBlob = vals[1];
+
+                if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+                    downloadSw(cachePdfName);
+                } else {
+                    downloadBlob(pdfBlob);
+                }
 
                 qrDiv = document.createElement('div');
                 qrDiv.classList.add('qr');
@@ -450,10 +485,10 @@ import { PDFDocument, StandardFonts } from 'pdf-lib';
             });
         };
 
-    document.getElementById('back').addEventListener('click', function(e) {
+    document.getElementById('back').addEventListener('click', function (e) {
         e.preventDefault();
 
-        switch(step) {
+        switch (step) {
             case 'qr':
                 if (qrDiv) {
                     qrDiv.parentNode.removeChild(qrDiv);
@@ -516,16 +551,16 @@ import { PDFDocument, StandardFonts } from 'pdf-lib';
                 });
             };
 
-            const showVersion = function() {
+            const showVersion = function () {
                 const version = document.getElementById('version');
                 if (version && version.dataset.v) {
                     fetch(version.dataset.v)
-                        .then(function(response) {
+                        .then(function (response) {
                             return response.json();
                         })
-                        .then(function(response) {
+                        .then(function (response) {
                             const date = new Date(response.time);
-                            version.innerText = response.v+' - '+formatDate(date, false, 'à');
+                            version.innerText = response.v + ' - ' + formatDate(date, false, 'à');
                         });
                 }
             };
@@ -571,7 +606,7 @@ import { PDFDocument, StandardFonts } from 'pdf-lib';
     }
 
     // Prompt install
-    window.addEventListener('beforeinstallprompt', function(e) {
+    window.addEventListener('beforeinstallprompt', function (e) {
         e.preventDefault();
         let deferredPrompt = e;
 
@@ -580,7 +615,7 @@ import { PDFDocument, StandardFonts } from 'pdf-lib';
         installButton.classList.add('installBut', 'appBut');
         installButton.innerText = 'Installer';
 
-        installButton.addEventListener('click', function(e) {
+        installButton.addEventListener('click', function (e) {
             deferredPrompt.prompt();
 
             // Follow what the user has done with the prompt.

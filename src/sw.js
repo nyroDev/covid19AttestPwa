@@ -1,4 +1,4 @@
-const version = '09';
+const version = '10';
 
 const files = [
     'index.html',
@@ -13,6 +13,9 @@ const cacheName = cachePrefix + version;
 let tmp = self.location.pathname.split('/');
 delete tmp[tmp.length - 1];
 const swLoc = tmp.join('/');
+
+const cacheAttestName = 'attestPdf';
+const cachePdfName = 'attestation.pdf';
 
 self.addEventListener('install', function (event) {
     event.waitUntil(
@@ -44,16 +47,24 @@ self.addEventListener('message', function (event) {
 
 self.addEventListener('fetch', function (event) {
     const url = new URL(event.request.url);
-    if (url.pathname == swLoc+'version.json') {
+    if (url.pathname == swLoc + 'version.json') {
         event.respondWith(Promise.resolve(new Response(JSON.stringify({
-            v: 'v'+parseInt(version),
+            v: 'v' + parseInt(version),
             time: BUILD_TIME
         }), {
             headers: {
                 'Content-Type': 'application/json'
             }
         })));
-        return;    
+        return;
+    }
+    if (url.pathname == swLoc + cachePdfName) {
+        event.respondWith(
+            caches.open(cacheAttestName).then(function (cache) {
+                return cache.match(cachePdfName);
+            })
+        );
+        return;
     }
     event.respondWith(
         caches.open(cacheName).then(function (cache) {
