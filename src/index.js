@@ -91,34 +91,35 @@ import { PDFDocument, StandardFonts } from 'pdf-lib';
             reasons: 'Motifs',
         },
         reasons = {
-            travail: 'Déplacements entre le domicile et le lieu d’exercice de l’activité professionnelle, lorsqu’ils sont indispensables à l’exercice d’activités ne pouvant être organisées sous forme de télétravail ou déplacements professionnels ne pouvant être différés',
-            courses: 'Déplacements pour effectuer des achats de fournitures nécessaires à l’activité professionnelle et des achats de première nécessité3 dans des établissements dont les activités demeurent autorisées (<a href="https://www.service-public.fr/particuliers/actualites/A13921" target="_blank">liste sur gouvernement.fr</a>).',
-            sante: 'Consultations et soins ne pouvant être assurés à distance et ne pouvant être différés ; consultations et soins des patients atteints d\'une affection de longue durée.',
-            famille: 'Déplacements pour motif familial impérieux, pour l’assistance aux personnes vulnérables ou la garde d’enfants.',
-            sport: 'Déplacements brefs, dans la limite d\'une heure quotidienne et dans un rayon maximal d\'un kilomètre autour du domicile, liés soit à l\'activité physique individuelle des personnes, à l\'exclusion de toute pratique sportive collective et de toute proximité avec d\'autres personnes, soit à la promenade avec les seules personnes regroupées dans un même domicile, soit aux besoins des animaux de compagnie.',
-            judiciaire: 'Convocation judiciaire ou administrative.',
-            missions: 'Participation à des missions d’intérêt général sur demande de l’autorité administrative.'
+            travail: 'Déplacements entre le domicile et le lieu d\'exercice de l\'activité professionnelle ou les déplacements professionnels ne pouvant être différés',
+            achats: 'Déplacements pour effectuer des achats de fournitures nécessaires à l\'activité professionnelle, des achats de première nécessité dans des établissements dont les activités demeurent autorisées et les livraisons à domicile',
+            sante: 'Consultations et soins ne pouvant être assurés à distance et ne pouvant être différés et l’achat de médicaments',
+            famille: 'Déplacements pour motif familial impérieux, pour l\'assistance aux personnes vulnérables et précaires ou la garde d\'enfants',
+            handicap: 'Déplacements des personnes en situation de handicap et de leur accompagnant',
+            sport_animaux: 'Déplacements brefs, dans la limite d\'une heure quotidienne et dans un rayon maximal d\'un kilomètre autour du domicile, liés soit à l\'activité physique individuelle des personnes, à l\'exclusion de toute pratique sportive collective et de toute proximité avec d\'autres personnes, soit à la promenade avec les seules personnes regroupées dans un même domicile, soit aux besoins des animaux de compagnie',
+            convocation: 'Convocation judiciaire ou administrative et rendez-vous dans un service public',
+            missions: 'Participation à des missions d\'intérêt général sur demande de l\'autorité administrative',
+            enfants: 'Déplacement pour chercher les enfants à l’écoles et à l’occasion de leurs activités périscolaires',
         },
         pdfPosition = {
-            name: [123, 686, 11],
-            date: [123, 661, 11],
-            place: [92, 638, 11],
-            fullAddress: [134, 613, 11],
+            name: [119, 696, 11],
+            date: [119, 674, 11],
+            place: [297, 674, 11],
+            fullAddress: [133, 652, 11],
             reasons: {
-                travail: [76, 527, 19],
-                courses: [76, 478, 19],
-                sante: [76, 436, 19],
-                famille: [76, 400, 19],
-                sport: [76, 345, 19],
-                judiciaire: [76, 298, 19],
-                missions: [76, 260, 19],
+                travail: [84, 578, 18],
+                achats: [84, 533, 18],
+                sante: [84, 477, 18],
+                famille: [84, 435, 18],
+                handicap: [84, 396, 18],
+                sport_animaux: [84, 358, 18],
+                convocation: [84, 295, 18],
+                missions: [84, 255, 18],
+                enfants: [84, 211, 18],
             },
-            city: [111, 226, 11],
-            dateSortie: [92, 200, 11],
-            heureSortie: [200, 201, 11],
-            minSortie: [220, 201, 11],
-            createdLbl: [464, 150, 7],
-            created: [455, 144, 7],
+            city: [105, 177, 11],
+            dateSortie: [91, 153, 11],
+            heureSortie: [264, 153, 11],
         },
         setStep = function (newStep) {
             document.body.removeAttribute('class');
@@ -310,7 +311,7 @@ import { PDFDocument, StandardFonts } from 'pdf-lib';
 
             data.push(labelsQr['dateSortie'] + ': ' + formatDate(fieldsData['dateSortie']));
 
-            data.push(labelsQr['reasons'] + ': ' + fieldsData['reasons'].join('-'));
+            data.push(labelsQr['reasons'] + ': ' + fieldsData['reasons'].join(', '));
 
             return data;
         },
@@ -338,11 +339,11 @@ import { PDFDocument, StandardFonts } from 'pdf-lib';
             }
             return c > maxWidth ? null : o;
         },
-        drawText = function (pdfDoc, font, text, prms) {
+        drawText = function (pdfDoc, font, text, prms, forceSize) {
             return pdfDoc.drawText(text, {
                 x: prms[0],
                 y: prms[1],
-                size: prms[2],
+                size: forceSize ? forceSize : prms[2],
                 font: font
             });
         },
@@ -358,10 +359,17 @@ import { PDFDocument, StandardFonts } from 'pdf-lib';
             }).then(function (pdfBuff) {
                 return PDFDocument.load(pdfBuff);
             }).then(function (pdfDoc) {
+                pdfDoc.setTitle("COVID-19 - Déclaration de déplacement");
+                pdfDoc.setSubject("Attestation de déplacement dérogatoire");
+                pdfDoc.setKeywords(["covid19", "covid-19", "attestation", "déclaration", "déplacement", "officielle", "gouvernement"]);
+                pdfDoc.setProducer("DNUM/SDIT");
+                pdfDoc.setCreator("");
+                pdfDoc.setAuthor("Ministère de l'intérieur");
+
                 return Promise.all([
                     pdfDoc,
                     pdfDoc.embedFont(StandardFonts.Helvetica),
-                    QRCode.toDataURL(data.join('; '), {
+                    QRCode.toDataURL(data.join(";\n "), {
                         errorCorrectionLevel: 'M',
                         type: "image/png",
                         quality: .92,
@@ -391,13 +399,10 @@ import { PDFDocument, StandardFonts } from 'pdf-lib';
                     drawText(page, font, 'x', pdfPosition.reasons[reason]);
                 });
 
-                drawText(page, font, fieldsData['city'], pdfPosition.city);
+                drawText(page, font, fieldsData['city'], pdfPosition.city, citySize);
                 drawText(page, font, formatDate(fieldsData['dateSortie'], true), pdfPosition.dateSortie);
-                drawText(page, font, (fieldsData['dateSortie'].getHours() + '').padStart(2, '0'), pdfPosition.heureSortie);
-                drawText(page, font, (fieldsData['dateSortie'].getMinutes() + '').padStart(2, '0'), pdfPosition.minSortie);
-                drawText(page, font, labels['created'], pdfPosition.createdLbl);
-                drawText(page, font, formatDate(fieldsData['now'], false, 'à'), pdfPosition.created);
-
+                drawText(page, font, (fieldsData['dateSortie'].getHours() + '').padStart(2, '0')+':'+(fieldsData['dateSortie'].getMinutes() + '').padStart(2, '0'), pdfPosition.heureSortie);
+                
                 return Promise.all([
                     pdfDoc,
                     qrCode,
@@ -411,10 +416,10 @@ import { PDFDocument, StandardFonts } from 'pdf-lib';
                 let page = pdfDoc.getPages()[0];
 
                 page.drawImage(emebedded, {
-                    x: page.getWidth() - 170,
-                    y: 155,
-                    width: 100,
-                    height: 100
+                    x: page.getWidth() - 156,
+                    y: 100,
+                    width: 92,
+                    height: 92
                 });
 
                 pdfDoc.addPage();
