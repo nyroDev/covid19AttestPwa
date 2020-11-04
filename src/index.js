@@ -1,6 +1,7 @@
 import css from './styles.css';
 
 const QRCode = require('qrcode');
+import removeAccents from 'remove-accents';
 import { PDFDocument, StandardFonts } from 'pdf-lib';
 
 (function () {
@@ -107,19 +108,25 @@ import { PDFDocument, StandardFonts } from 'pdf-lib';
             place: [297, 674, 11],
             fullAddress: [133, 652, 11],
             reasons: {
-                travail: [84, 578, 18],
-                achats: [84, 533, 18],
-                sante: [84, 477, 18],
-                famille: [84, 435, 18],
-                handicap: [84, 396, 18],
-                sport_animaux: [84, 358, 18],
-                convocation: [84, 295, 18],
-                missions: [84, 255, 18],
-                enfants: [84, 211, 18],
+                travail: [78, 578, 18],
+                achats: [78, 533, 18],
+                sante: [78, 477, 18],
+                famille: [78, 435, 18],
+                handicap: [78, 396, 18],
+                sport_animaux: [78, 358, 18],
+                convocation: [78, 295, 18],
+                missions: [78, 255, 18],
+                enfants: [78, 211, 18],
             },
             city: [105, 177, 11],
             dateSortie: [91, 153, 11],
             heureSortie: [264, 153, 11],
+        },
+        toAscii = function(string) {
+            if (typeof string !== 'string') {
+                throw new Error('Need string')
+            }
+            return removeAccents(string).replace(/[^\x00-\x7F]/g, '');
         },
         setStep = function (newStep) {
             document.body.removeAttribute('class');
@@ -290,10 +297,10 @@ import { PDFDocument, StandardFonts } from 'pdf-lib';
 
             reasonForm.classList.remove('hide');
         },
-        formatDate = function (date, simple, timeLetter = 'a') {
+        formatDate = function (date, simple, timeLetter = 'a', sepHour = 'h') {
             let tmp = (date.getDate() + '').padStart(2, '0') + '/' + (1 + date.getMonth() + '').padStart(2, '0') + '/' + date.getFullYear();
             if (!simple) {
-                tmp += ' ' + timeLetter + ' ' + (date.getHours() + '').padStart(2, '0') + 'h' + (date.getMinutes() + '').padStart(2, '0');
+                tmp += ' ' + timeLetter + ' ' + (date.getHours() + '').padStart(2, '0') + sepHour + (date.getMinutes() + '').padStart(2, '0');
             }
             return tmp;
         },
@@ -302,16 +309,18 @@ import { PDFDocument, StandardFonts } from 'pdf-lib';
 
             fieldsData['dateSortie'] = new Date(fieldsData['dateSortie'] + 'T' + fieldsData['heureSortie']);
 
-            data.push(labelsQr['curDate'] + ': ' + formatDate(fieldsData['now']));
+            data.push(toAscii(labelsQr['curDate'] + ': ' + formatDate(fieldsData['now'])));
 
-            data.push(labelsQr['lastname'] + ': ' + fieldsData['lastname']);
-            data.push(labelsQr['firstname'] + ': ' + fieldsData['firstname']);
-            data.push(labelsQr['date'] + ': ' + fieldsData['date'] + ' ' + labelsQr['place'] + ' ' + fieldsData['place']);
-            data.push(labelsQr['address'] + ': ' + fieldsData['address'] + ' ' + fieldsData['zipcode'] + ' ' + fieldsData['city']);
+            data.push(toAscii(labelsQr['lastname'] + ': ' + fieldsData['lastname']));
+            data.push(toAscii(labelsQr['firstname'] + ': ' + fieldsData['firstname']));
+            data.push(toAscii(labelsQr['date'] + ': ' + fieldsData['date'] + ' ' + labelsQr['place'] + ' ' + fieldsData['place']));
+            data.push(toAscii(labelsQr['address'] + ': ' + fieldsData['address'] + ' ' + fieldsData['zipcode'] + ' ' + fieldsData['city']));
 
-            data.push(labelsQr['dateSortie'] + ': ' + formatDate(fieldsData['dateSortie']));
+            data.push(labelsQr['dateSortie'] + ': ' + formatDate(fieldsData['dateSortie'], false, 'a', ':'));
 
             data.push(labelsQr['reasons'] + ': ' + fieldsData['reasons'].join(', '));
+
+            data.push('');
 
             return data;
         },
@@ -369,9 +378,9 @@ import { PDFDocument, StandardFonts } from 'pdf-lib';
                 return Promise.all([
                     pdfDoc,
                     pdfDoc.embedFont(StandardFonts.Helvetica),
-                    QRCode.toDataURL(data.join(";\n "), {
+                    QRCode.toDataURL(data.join(";\n"), {
                         errorCorrectionLevel: 'M',
-                        type: "image/png",
+                        type: 'image/png',
                         quality: .92,
                         margin: 1
                     })
@@ -390,16 +399,16 @@ import { PDFDocument, StandardFonts } from 'pdf-lib';
                     citySize = minSize;
                 }
 
-                drawText(page, font, fieldsData['firstname'] + ' ' + fieldsData['lastname'], pdfPosition.name);
-                drawText(page, font, fieldsData['date'], pdfPosition.date);
-                drawText(page, font, fieldsData['place'], pdfPosition.place);
-                drawText(page, font, fieldsData['address'] + ' ' + fieldsData['zipcode'] + ' ' + fieldsData['city'], pdfPosition.fullAddress);
+                drawText(page, font, toAscii(fieldsData['firstname'] + ' ' + fieldsData['lastname']), pdfPosition.name);
+                drawText(page, font, toAscii(fieldsData['date']), pdfPosition.date);
+                drawText(page, font, toAscii(fieldsData['place']), pdfPosition.place);
+                drawText(page, font, toAscii(fieldsData['address'] + ' ' + fieldsData['zipcode'] + ' ' + fieldsData['city']), pdfPosition.fullAddress);
 
                 fieldsData.reasons.forEach(function (reason) {
                     drawText(page, font, 'x', pdfPosition.reasons[reason]);
                 });
 
-                drawText(page, font, fieldsData['city'], pdfPosition.city, citySize);
+                drawText(page, font, toAscii(fieldsData['city']), pdfPosition.city, citySize);
                 drawText(page, font, formatDate(fieldsData['dateSortie'], true), pdfPosition.dateSortie);
                 drawText(page, font, (fieldsData['dateSortie'].getHours() + '').padStart(2, '0')+':'+(fieldsData['dateSortie'].getMinutes() + '').padStart(2, '0'), pdfPosition.heureSortie);
                 

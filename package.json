@@ -20,6 +20,6 @@
   "dependencies": {
     "pdf-lib": "^1.11.2",
     "qrcode": "^1.4.4",
-    "qrjs2": "^0.1.7"
+    "remove-accents": "^0.4.2"
   }
 }
