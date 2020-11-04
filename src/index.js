@@ -307,7 +307,9 @@ import { PDFDocument, StandardFonts } from 'pdf-lib';
         prepareData = function () {
             const data = [];
 
-            fieldsData['dateSortie'] = new Date(fieldsData['dateSortie'] + 'T' + fieldsData['heureSortie']);
+            fieldsData['dateSortie'] = new Date();
+            const tmpHeure = fieldsData['heureSortie'].split(':');
+            fieldsData['dateSortie'].setHours(tmpHeure[0], tmpHeure[1]);
 
             data.push(toAscii(labelsQr['curDate'] + ': ' + formatDate(fieldsData['now'])));
 
