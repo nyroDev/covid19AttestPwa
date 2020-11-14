@@ -11,14 +11,17 @@ header {
     padding: 10px;
     background: #333;
 }
+
 #warning {
     margin: -10px -10px 10px;
     padding: 10px;
     background: #FD9999;
 }
+
 #warning p {
     margin: 0;
 }
+
 #warning a {
     color: #000;
 }

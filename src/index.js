@@ -2,7 +2,11 @@ import css from './styles.css';
 
 const QRCode = require('qrcode');
 import removeAccents from 'remove-accents';
-import { PDFDocument, StandardFonts } from 'pdf-lib';
+import {
+    PDFDocument,
+    rgb,
+    StandardFonts
+} from 'pdf-lib';
 
 (function () {
     const storageName = 'attestation';
@@ -102,27 +106,29 @@ import { PDFDocument, StandardFonts } from 'pdf-lib';
             missions: 'Participation à des missions d\'intérêt général sur demande de l\'autorité administrative',
             enfants: 'Déplacement pour chercher les enfants à l’écoles et à l’occasion de leurs activités périscolaires',
         },
+        qrTitle1 = 'QR-code contenant les informations ',
+        qrTitle2 = 'de votre attestation numérique',
         pdfPosition = {
-            name: [119, 696, 11],
-            date: [119, 674, 11],
-            place: [297, 674, 11],
-            fullAddress: [133, 652, 11],
+            name: [107, 657, 11],
+            date: [107, 627, 11],
+            place: [240, 627, 11],
+            fullAddress: [124, 596, 11],
             reasons: {
-                travail: [78, 578, 18],
-                achats: [78, 533, 18],
-                sante: [78, 477, 18],
-                famille: [78, 435, 18],
-                handicap: [78, 396, 18],
-                sport_animaux: [78, 358, 18],
-                convocation: [78, 295, 18],
-                missions: [78, 255, 18],
-                enfants: [78, 211, 18],
+                travail: [59, 488, 12],
+                achats: [59, 417, 12],
+                sante: [59, 347, 12],
+                famille: [59, 325, 12],
+                handicap: [59, 291, 12],
+                sport_animaux: [59, 269, 12],
+                convocation: [59, 199, 12],
+                missions: [59, 178, 12],
+                enfants: [59, 157, 12],
             },
-            city: [105, 177, 11],
-            dateSortie: [91, 153, 11],
-            heureSortie: [264, 153, 11],
+            city: [93, 122, 11],
+            dateSortie: [76, 92, 11],
+            heureSortie: [246, 92, 11],
         },
-        toAscii = function(string) {
+        toAscii = function (string) {
             if (typeof string !== 'string') {
                 throw new Error('Need string')
             }
@@ -412,23 +418,34 @@ import { PDFDocument, StandardFonts } from 'pdf-lib';
 
                 drawText(page, font, toAscii(fieldsData['city']), pdfPosition.city, citySize);
                 drawText(page, font, formatDate(fieldsData['dateSortie'], true), pdfPosition.dateSortie);
-                drawText(page, font, (fieldsData['dateSortie'].getHours() + '').padStart(2, '0')+':'+(fieldsData['dateSortie'].getMinutes() + '').padStart(2, '0'), pdfPosition.heureSortie);
-                
+                drawText(page, font, (fieldsData['dateSortie'].getHours() + '').padStart(2, '0') + ':' + (fieldsData['dateSortie'].getMinutes() + '').padStart(2, '0'), pdfPosition.heureSortie);
+
+                page.drawText(qrTitle1 + '\n' + qrTitle2, {
+                    x: 415,
+                    y: 135,
+                    size: 9,
+                    font,
+                    lineHeight: 10,
+                    color: rgb(1, 1, 1)
+                });
+
                 return Promise.all([
                     pdfDoc,
+                    font,
                     qrCode,
                     pdfDoc.embedPng(qrCode)
                 ]);
             }).then(function (vals) {
                 const pdfDoc = vals[0];
-                const qrCode = vals[1];
-                const emebedded = vals[2];
+                const font = vals[1];
+                const qrCode = vals[2];
+                const emebedded = vals[3];
 
                 let page = pdfDoc.getPages()[0];
 
                 page.drawImage(emebedded, {
                     x: page.getWidth() - 156,
-                    y: 100,
+                    y: 25,
                     width: 92,
                     height: 92
                 });
@@ -437,9 +454,17 @@ import { PDFDocument, StandardFonts } from 'pdf-lib';
 
                 page = pdfDoc.getPages()[1];
 
+                page.drawText(qrTitle1 + qrTitle2, {
+                    x: 50,
+                    y: page.getHeight() - 70,
+                    size: 11,
+                    font,
+                    color: rgb(1, 1, 1)
+                });
+
                 page.drawImage(emebedded, {
                     x: 50,
-                    y: page.getHeight() - 350,
+                    y: page.getHeight() - 390,
                     width: 300,
                     height: 300
                 });
